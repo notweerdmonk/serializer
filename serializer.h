@@ -63,7 +63,7 @@ public:
 
     if (std::is_trivially_copyable<T>::value) {
 
-      uint8_t size = sizeof(T);
+      std::size_t size = sizeof(T);
       if (size > 127) {
         throw serializer_error(serializer_error::range_err);
       }
