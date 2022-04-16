@@ -36,6 +36,7 @@ public:
       read(&n);
       s.resize(seek() + 1);
       read(const_cast<char*>(s.c_str()), s.size());
+      char *c = const_cast<char*>(&s.c_str()[s.size()]); *c = '\0';
       read(&f);
       read(str, 2048);
     } catch(serializer::serializer_error e) {
@@ -55,44 +56,86 @@ int main() {
 
   try {
     s.write(0xffffffff);
-    s.write("string", 6);
-    s.write(arr_in, 3);
+    s.write("string", 7);
     s.write(3.14159);
+    s.write(arr_in, 3);
   } catch(serializer::serializer_error e) {
     std::cerr << e.what() << std::endl;
   }
   try {
     s.read(&n);
-    s.read(str, 8);
-    s.read(arr_out, 4);
+    s.read(str, 7);
     s.read(&f);
+    s.read(arr_out, 3);
   } catch(serializer::serializer_error e) {
     std::cerr << e.what() << std::endl;
   }
-  std::cout << n << ", " << str << ", ";
-  for (int n: arr_out) std::cout << n;
-  std::cout << ", " << f << std::endl;
+
+  bool check = true;
+
+  if (n != 0xffffffff) {
+    check = false;
+  }
+  if (strcmp(str, "string")) {
+    check = false;
+  }
+  if (f != 3.14159) {
+    check = false;
+  }
+  if (memcmp(arr_out, arr_in, 3)) {
+    check = false;
+  }
+  if (check) {
+    std::cout << "check 1 passed" << '\n';
+  } else {
+    std::cerr << "check 1 failed" << '\n';
+    return -1;
+  }
+
   delete str;
 
-  char str2[2048];
-  memset(str2, 'A', 2048);
-  demo obj1(0xffff, "string", 3.14159, str2);
+  char mem_in[2048];
+  memset(mem_in, 'A', 2048);
+
+  demo obj1(0xffff, "string", 3.14159, mem_in);
   obj1.serialize();
+
   std::ofstream out("data", std::ios::binary);
-  //std::ostream out(std::cout.rdbuf());
+
   obj1.store(out);
   out.close();
 
   demo obj2;
+
   //std::istream in(std::cin.rdbuf());
   std::ifstream in("data", std::ios::binary);
+
   obj2.retrieve(in);
   obj2.deserialize();
-  std::cout << "obj2: " << obj2.n << ", " << obj2.s << ", " << obj2.f << ", ";
-  char str3[2048] = { 'A', };
-  memset(str3, 'A', 2048);
-  std::cout << "memcmp result: " << memcmp(str2, str3, 2048);
-  std::cout << std::endl;
+
+  check = true;
+
+  if (obj2.n != 0xffff) {
+    check = false;
+  }
+  //if (obj2.s.compare(std::string("string"))) {
+  if (obj2.s == "string") {
+    check = false;
+  }
+  if (obj2.f != 3.14159) {
+    check = false;
+  }
+  char mem_out[2048];
+  memset(mem_out, 'A', 2048);
+  if (memcmp(mem_out, mem_in, 2048)) {
+    check = false;
+  }
+  if (check) {
+    std::cout << "check 2 passed" << '\n';
+  } else {
+    std::cerr << "check 2 failed" << '\n';
+    return -1;
+  }
 
   return 0;
 }
