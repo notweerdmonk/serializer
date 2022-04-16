@@ -34,7 +34,7 @@ public:
   void deserialize() {
     try {
       read(&n);
-      s.resize(seek());
+      s.resize(seek() + 1);
       read(const_cast<char*>(s.c_str()), s.size());
       read(&f);
       read(str, 2048);
@@ -44,17 +44,6 @@ public:
   }
 };
 
-void print_array(char arr[], std::size_t n) {
-  for (int i = 0; i < n; i++) {
-    std::cout << arr[i];
-  }
-}
-
-void print_array(int arr[], std::size_t n) {
-  for (int i = 0; i < n; i++) {
-    std::cout << arr[i];
-  }
-}
 int main() {
   serializer s;
   double f;
@@ -66,7 +55,7 @@ int main() {
 
   try {
     s.write(0xffffffff);
-    s.write("string", 5);
+    s.write("string", 6);
     s.write(arr_in, 3);
     s.write(3.14159);
   } catch(serializer::serializer_error e) {
@@ -80,15 +69,13 @@ int main() {
   } catch(serializer::serializer_error e) {
     std::cerr << e.what() << std::endl;
   }
-  std::cout << "obj1: " << n << ", " << str << ", ";
-  print_array(arr_out, 4);
+  std::cout << n << ", " << str << ", ";
+  for (int n: arr_out) std::cout << n;
   std::cout << ", " << f << std::endl;
   delete str;
 
   char str2[2048];
-  for (int i = 0; i < 2048; i++) {
-    str2[i] = 'A';
-  }
+  memset(str2, 'A', 2048);
   demo obj1(0xffff, "string", 3.14159, str2);
   obj1.serialize();
   std::ofstream out("data", std::ios::binary);
@@ -102,7 +89,9 @@ int main() {
   obj2.retrieve(in);
   obj2.deserialize();
   std::cout << "obj2: " << obj2.n << ", " << obj2.s << ", " << obj2.f << ", ";
-  print_array(obj2.str, 2048);
+  char str3[2048] = { 'A', };
+  memset(str3, 'A', 2048);
+  std::cout << "memcmp result: " << memcmp(str2, str3, 2048);
   std::cout << std::endl;
 
   return 0;
