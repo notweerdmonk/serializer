@@ -19,7 +19,8 @@ public:
       range_err = 1,
       range_err_arr,
       data_err,
-      size_err
+      size_err,
+      non_trivial_err
     };
 
     explicit serializer_error(const err_type& e) {
@@ -37,8 +38,14 @@ public:
       } else if (error == data_err) {
         return "corrupt data in buffer";
 
-      } else {
+      } else if (error == size_err) {
         return "size mismatch";
+
+      } else if (error == non_trivial_err) {
+        return "writing non-trivial object";
+        
+      } else {
+        return "unhandled exception";
       }
     }
 
@@ -54,28 +61,40 @@ public:
   template<typename T>
   void write(T t) {
 
-    uint8_t size = sizeof(T);
-    if (size > 127) {
-      throw serializer_error(serializer_error::range_err);
-    }
+    if (std::is_trivially_copyable<T>::value) {
 
-    buffer.write(&size, sizeof(size));
-    buffer.write(reinterpret_cast<const uint8_t*>(&t), size);
+      uint8_t size = sizeof(T);
+      if (size > 127) {
+        throw serializer_error(serializer_error::range_err);
+      }
+
+      buffer.write(&size, sizeof(size));
+      buffer.write(reinterpret_cast<const uint8_t*>(&t), size);
+
+    } else {
+      throw serializer_error(serializer_error::non_trivial_err);
+    }
   }
 
   template<typename T>
   void write(T *t, std::size_t n) {
 
-    std::size_t size = sizeof(T) * n;
-    if (size > 0x7fffffffffffffff) {
-      throw serializer_error(serializer_error::range_err_arr);
-    }
-    /* set MSB */
-    size = size | ((unsigned long)0x80 << 8 * (sizeof(size) - 1));
-    buffer.write(reinterpret_cast<const uint8_t*>(&size), sizeof(size));
+    if (std::is_trivially_copyable<T>::value) {
 
-    size = size & ~((unsigned long)0x80 << 8 * (sizeof(size) - 1));
-    buffer.write(reinterpret_cast<const uint8_t*>(t), size);
+      std::size_t size = sizeof(T) * n;
+      if (size > 0x7fffffffffffffff) {
+        throw serializer_error(serializer_error::range_err_arr);
+      }
+      /* set MSB */
+      size = size | ((unsigned long)0x80 << 8 * (sizeof(size) - 1));
+      buffer.write(reinterpret_cast<const uint8_t*>(&size), sizeof(size));
+
+      size = size & ~((unsigned long)0x80 << 8 * (sizeof(size) - 1));
+      buffer.write(reinterpret_cast<const uint8_t*>(t), size);
+
+    } else {
+      throw serializer_error(serializer_error::non_trivial_err);
+    }
   }
 
   template<typename T>
