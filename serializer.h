@@ -100,8 +100,8 @@ public:
   template<typename T>
   void read(T *t) {
 
-    uint8_t size;
-    buffer.read(&size, sizeof(size));
+    std::size_t size;
+    buffer.read(reinterpret_cast<uint8_t*>(&size), sizeof(size));
 
     if (size > 127) {
       throw serializer_error(serializer_error::data_err);
