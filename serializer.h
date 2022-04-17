@@ -68,7 +68,7 @@ public:
         throw serializer_error(serializer_error::range_err);
       }
 
-      buffer.write(&size, sizeof(size));
+      buffer.write(reinterpret_cast<const uint8_t*>(&size), sizeof(size));
       buffer.write(reinterpret_cast<const uint8_t*>(&t), size);
 
     } else {
