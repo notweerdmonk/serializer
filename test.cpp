@@ -46,13 +46,22 @@ public:
 };
 
 int main() {
-  serializer s;
-  double f;
+
+  bool check = true;
+
+  /*
+   * GIVEN C dataypes
+   * WHEN data is serialzed, stored to a file, retrieved and deserialzied
+   * THEN check if data is not corruped
+   */
+
   unsigned int n;
   char *str = new char[8];
-
+  double f;
   int arr_in[] = { 127, 255, 65535 };
   int arr_out[4];
+
+  serializer s;
 
   try {
     s.write(0xffffffff);
@@ -70,8 +79,6 @@ int main() {
   } catch(serializer::serializer_error e) {
     std::cerr << e.what() << std::endl;
   }
-
-  bool check = true;
 
   if (n != 0xffffffff) {
     check = false;
@@ -93,6 +100,12 @@ int main() {
   }
 
   delete str;
+
+  /*
+   * GIVEN object
+   * WHEN members are serialzed, stored to a file, retrieved and deserialzied
+   * THEN check if data is not corruped
+   */
 
   char mem_in[2048];
   memset(mem_in, 'A', 2048);
@@ -118,7 +131,6 @@ int main() {
   if (obj2.n != 0xffff) {
     check = false;
   }
-  //if (obj2.s.compare(std::string("string"))) {
   if (obj2.s == "string") {
     check = false;
   }
