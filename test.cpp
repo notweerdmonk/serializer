@@ -1,5 +1,6 @@
 #include <serializer.h>
 #include <cstring>
+#include <cassert>
 #include <iostream>
 #include <string>
 #include <fstream>
@@ -98,30 +99,13 @@ int main() {
     std::cerr << e.what() << std::endl;
   }
 
-  if (n != 0xffffffff) {
+  assert(("int check failed", n == 0xffffffff));
 
-    check = false;
-  }
-  if (strcmp(str, "string")) {
+  assert(("char[] string check failed", !strcmp(str, "string")));
 
-    check = false;
-  }
-  if (f != 3.14159) {
+  assert(("double check failed", f == 3.14159));
 
-    check = false;
-  }
-  if (memcmp(arr_out, arr_in, 3)) {
-
-    check = false;
-  }
-  if (check) {
-
-    std::cout << "check 1 passed" << '\n';
-  } else {
-
-    std::cerr << "check 1 failed" << '\n';
-    return -1;
-  }
+  assert(("int[] check failed", !memcmp(arr_out, arr_in, 3)));
 
   delete str;
 
@@ -152,34 +136,18 @@ int main() {
 
   check = true;
 
-  if (obj2.n != 0xffff) {
+  assert(("int member check failed", obj2.n == 0xffff));
 
-    check = false;
-  }
-  if (obj2.s != "string") {
+  assert(("std::string member check failed", obj2.s == "string"));
 
-    check = false;
-  }
-  if (obj2.f != 3.14159) {
-
-    check = false;
-  }
+  assert(("double member check failed", obj2.f == 3.14159));
 
   char mem_out[2048];
   memset(mem_out, 'A', 2048);
 
-  if (memcmp(mem_out, mem_in, 2048)) {
+  assert(("char[] member check failed", !memcmp(mem_out, mem_in, 2048)));
 
-    check = false;
-  }
-  if (check) {
-
-    std::cout << "check 2 passed" << '\n';
-  } else {
-
-    std::cerr << "check 2 failed" << '\n';
-    return -1;
-  }
+  std::cout << "All checks have passed\n";
 
   /* testing github CI make check */
   assert(1 != 1);
