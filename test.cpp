@@ -14,32 +14,44 @@ public:
   demo() : n(0), s(""), f(0.0), str{0,} {}
 
   demo(int _n, std::string _s, double _f, char _str[]) {
+
     n = _n;
     s = _s;
     f = _f;
+
     memcpy(str, _str, 2048);
   }
 
   void serialize() {
     try {
+
       write(n);
       write(s.c_str(), s.size());
       write(f);
       write(str, 2048);
+
     } catch(serializer::serializer_error e) {
+
       std::cerr << e.what() << std::endl;
     }
   }
 
   void deserialize() {
     try {
+
       read(&n);
-      s.resize(seek() + 1);
-      read(const_cast<char*>(s.c_str()), s.size());
-      char *c = const_cast<char*>(&s.c_str()[s.size()]); *c = '\0';
+
+      std::size_t size = seek();
+      char* buffer = new char[size];
+      read(buffer, size);
+      buffer[size] = '\0';
+      s = buffer; 
+
       read(&f);
       read(str, 2048);
+
     } catch(serializer::serializer_error e) {
+
       std::cerr << e.what() << std::endl;
     }
   }
@@ -64,37 +76,49 @@ int main() {
   serializer s;
 
   try {
+
     s.write(0xffffffff);
     s.write("string", 7);
     s.write(3.14159);
     s.write(arr_in, 3);
+
   } catch(serializer::serializer_error e) {
+
     std::cerr << e.what() << std::endl;
   }
   try {
+
     s.read(&n);
     s.read(str, 7);
     s.read(&f);
     s.read(arr_out, 3);
+
   } catch(serializer::serializer_error e) {
+
     std::cerr << e.what() << std::endl;
   }
 
   if (n != 0xffffffff) {
+
     check = false;
   }
   if (strcmp(str, "string")) {
+
     check = false;
   }
   if (f != 3.14159) {
+
     check = false;
   }
   if (memcmp(arr_out, arr_in, 3)) {
+
     check = false;
   }
   if (check) {
+
     std::cout << "check 1 passed" << '\n';
   } else {
+
     std::cerr << "check 1 failed" << '\n';
     return -1;
   }
@@ -129,22 +153,30 @@ int main() {
   check = true;
 
   if (obj2.n != 0xffff) {
+
     check = false;
   }
-  if (obj2.s == "string") {
+  if (obj2.s != "string") {
+
     check = false;
   }
   if (obj2.f != 3.14159) {
+
     check = false;
   }
+
   char mem_out[2048];
   memset(mem_out, 'A', 2048);
+
   if (memcmp(mem_out, mem_in, 2048)) {
+
     check = false;
   }
   if (check) {
+
     std::cout << "check 2 passed" << '\n';
   } else {
+
     std::cerr << "check 2 failed" << '\n';
     return -1;
   }
