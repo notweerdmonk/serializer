@@ -149,5 +149,7 @@ int main() {
 
   std::cout << "All checks have passed\n";
 
+  /* testing github CI make check */
+  assert(1 != 1);
   return 0;
 }
