@@ -1,14 +1,16 @@
 #ifndef __SERIALIZER_H__
 #define __SERIALIZER_H__
 
-#include <sstream>
-#include <exception>
 #include <cstddef>
 #include <cstdint>
+#include <sstream>
+#include <exception>
+#include <mutex>
 
 class serializer {
 
   std::basic_stringstream<uint8_t> buffer;
+  std::mutex buffer_mutex;
 
 public:
 
@@ -67,6 +69,7 @@ public:
       if (size > 127) {
         throw serializer_error(serializer_error::range_err);
       }
+      const std::lock_guard<std::mutex> lock(buffer_mutex);
 
       buffer.write(reinterpret_cast<const uint8_t*>(&size), sizeof(size));
       buffer.write(reinterpret_cast<const uint8_t*>(&t), size);
@@ -85,6 +88,9 @@ public:
       if (size > 0x7fffffffffffffff) {
         throw serializer_error(serializer_error::range_err_arr);
       }
+
+      const std::lock_guard<std::mutex> lock(buffer_mutex);
+
       /* set MSB */
       size = size | ((unsigned long)0x80 << 8 * (sizeof(size) - 1));
       buffer.write(reinterpret_cast<const uint8_t*>(&size), sizeof(size));
@@ -110,6 +116,9 @@ public:
       throw serializer_error(serializer_error::size_err);
 
     } else {
+
+      const std::lock_guard<std::mutex> lock(buffer_mutex);
+
       buffer.read(reinterpret_cast<uint8_t*>(t), size);
     }
   }
@@ -131,6 +140,9 @@ public:
         throw serializer_error(serializer_error::size_err);
 
       } else {
+
+        const std::lock_guard<std::mutex> lock(buffer_mutex);
+
         buffer.read(reinterpret_cast<uint8_t*>(t), size);
       }
     }
