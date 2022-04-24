@@ -29,6 +29,8 @@
 
 #define WRITE_MANY(obj, ...)                            FOR_EACH((obj).write, __VA_ARGS__)
 
+#define READ_MANY(obj, ...)                             FOR_EACH((obj).read, __VA_ARGS__)
+
 namespace yas {
 
   class serializer {

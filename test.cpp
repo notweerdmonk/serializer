@@ -26,8 +26,8 @@ public:
   }
 
   void serialize() {
-    try {
 
+    try {
       WRITE_MANY(*this, n, f, s);
 
       write(str, 2048);
@@ -39,11 +39,10 @@ public:
   }
 
   void deserialize() {
-    try {
 
-      read(&n);
-      read(&f);
-      read(s);
+    try {
+      READ_MANY(*this, &n, &f, s);
+
       read(str, 2048);
 
     } catch(serializer::serializer_error e) {
