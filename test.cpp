@@ -10,8 +10,8 @@ using namespace yas;
 class demo : public serializer {
 public:
   int n;
-  std::string s;
   double f;
+  std::string s;
   char str[2048];
 
   demo() : n(0), s(""), f(0.0), str{0,} {}
@@ -28,9 +28,9 @@ public:
   void serialize() {
     try {
 
-      write(n);
+      WRITE_MANY(*this, n, f);
+
       write(s.c_str(), s.size());
-      write(f);
       write(str, 2048);
 
     } catch(serializer::serializer_error e) {
@@ -43,6 +43,7 @@ public:
     try {
 
       read(&n);
+      read(&f);
 
       std::size_t size = seek();
       char* buffer = new char[size];
@@ -50,7 +51,6 @@ public:
       buffer[size] = '\0';
       s = buffer; 
 
-      read(&f);
       read(str, 2048);
 
     } catch(serializer::serializer_error e) {
@@ -71,8 +71,8 @@ int main() {
    */
 
   unsigned int n;
-  char *str = new char[8];
   double f;
+  char *str = new char[8];
   int arr_in[] = { 127, 255, 65535 };
   int arr_out[4];
 
@@ -81,8 +81,8 @@ int main() {
   try {
 
     s.write(0xffffffff);
-    s.write("string", 7);
     s.write(3.14159);
+    s.write("string", 7);
     s.write(arr_in, 3);
 
   } catch(serializer::serializer_error e) {
@@ -92,8 +92,8 @@ int main() {
   try {
 
     s.read(&n);
-    s.read(str, 7);
     s.read(&f);
+    s.read(str, 7);
     s.read(arr_out, 3);
 
   } catch(serializer::serializer_error e) {
