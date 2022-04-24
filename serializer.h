@@ -122,10 +122,10 @@ namespace yas {
         size = size & ~((unsigned long)0x80 << 8 * (sizeof(size) - 1));
         buffer.write(reinterpret_cast<const uint8_t*>(t), size);
 
-        } else {
-          throw serializer_error(serializer_error::non_trivial_err);
-        }
+      } else {
+        throw serializer_error(serializer_error::non_trivial_err);
       }
+    }
 
     void write(std::basic_string<char>& s) {
 
@@ -137,14 +137,15 @@ namespace yas {
 
       const std::lock_guard<std::mutex> lock(buffer_mutex);
 
+      size = size | ((unsigned long)0x80 << 8 * (sizeof(size) - 1));
       buffer.write(reinterpret_cast<const uint8_t*>(&size), sizeof(size));
 
       /* 
        * We cannot use opetator<< as it has no overload for std::string.
        */
+      size = size & ~((unsigned long)0x80 << 8 * (sizeof(size) - 1));
       buffer.write(reinterpret_cast<const uint8_t*>(s.c_str()), size);
     }
-
 
     template<typename T>
     void read(T *t) {

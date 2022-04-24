@@ -28,9 +28,8 @@ public:
   void serialize() {
     try {
 
-      WRITE_MANY(*this, n, f);
+      WRITE_MANY(*this, n, f, s);
 
-      write(s.c_str(), s.size());
       write(str, 2048);
 
     } catch(serializer::serializer_error e) {
