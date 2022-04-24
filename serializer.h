@@ -89,7 +89,7 @@ namespace yas {
 
       if (std::is_trivially_copyable<T>::value) {
 
-        std::size_t size = sizeof(T);
+        auto size = sizeof(T);
         if (size > 127) {
           throw serializer_error(serializer_error::range_err);
         }
@@ -108,7 +108,7 @@ namespace yas {
 
       if (std::is_trivially_copyable<T>::value) {
 
-        std::size_t size = sizeof(T) * n;
+        auto size = sizeof(T) * n;
         if (size > 0x7fffffffffffffff) {
           throw serializer_error(serializer_error::range_err_arr);
         }
