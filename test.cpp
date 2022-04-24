@@ -46,7 +46,7 @@ public:
       read(&f);
 
       std::size_t size = seek();
-      char* buffer = new char[size];
+      char* buffer = new char[size + 1];
       read(buffer, size);
       buffer[size] = '\0';
       s = buffer; 
