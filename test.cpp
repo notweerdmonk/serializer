@@ -5,6 +5,8 @@
 #include <string>
 #include <fstream>
 
+using namespace yas;
+
 class demo : public serializer {
 public:
   int n;
