@@ -44,13 +44,7 @@ public:
 
       read(&n);
       read(&f);
-
-      std::size_t size = seek();
-      char* buffer = new char[size + 1];
-      read(buffer, size);
-      buffer[size] = '\0';
-      s = buffer; 
-
+      read(s);
       read(str, 2048);
 
     } catch(serializer::serializer_error e) {
@@ -73,6 +67,8 @@ int main() {
   unsigned int n;
   double f;
   char *str = new char[8];
+  std::string s_in{"c++ string"};
+  std::string s_out;
   int arr_in[] = { 127, 255, 65535 };
   int arr_out[4];
 
@@ -84,6 +80,7 @@ int main() {
     s.write(3.14159);
     s.write("string", 7);
     s.write(arr_in, 3);
+    s.write(s_in);
 
   } catch(serializer::serializer_error e) {
 
@@ -95,6 +92,7 @@ int main() {
     s.read(&f);
     s.read(str, 7);
     s.read(arr_out, 3);
+    s.read(s_out);
 
   } catch(serializer::serializer_error e) {
 

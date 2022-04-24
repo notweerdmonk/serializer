@@ -6,10 +6,12 @@
 #include <sstream>
 #include <exception>
 #include <mutex>
+#include <string>
 
 #define CAT(a, b)                                       a##b
 
 #define SEQ_N(_1, _2, _3, _4, _5, _6, _7, _8, N, ...)   N
+
 #define NARGS(...)                                      SEQ_N(__VA_ARGS__, 8, 7, 6, 5, 4, 3, 2, 1)
 
 #define FOR_EACH_1(F, a)                                F(a)
@@ -22,6 +24,7 @@
 #define FOR_EACH_8(F, a, ...)                           F(a); FOR_EACH_7(F, __VA_ARGS__)
 
 #define FOR_EACH_EXPAND(N, F, ...)                      CAT(FOR_EACH_, N)(F, __VA_ARGS__)
+
 #define FOR_EACH(F, ...)                                FOR_EACH_EXPAND(NARGS(__VA_ARGS__), F, __VA_ARGS__)
 
 #define WRITE_MANY(obj, ...)                            FOR_EACH((obj).write, __VA_ARGS__)
@@ -119,10 +122,29 @@ namespace yas {
         size = size & ~((unsigned long)0x80 << 8 * (sizeof(size) - 1));
         buffer.write(reinterpret_cast<const uint8_t*>(t), size);
 
-      } else {
-        throw serializer_error(serializer_error::non_trivial_err);
+        } else {
+          throw serializer_error(serializer_error::non_trivial_err);
+        }
       }
+
+    void write(std::basic_string<char>& s) {
+
+      auto size = s.length();
+
+      if (size > 0x7fffffffffffffff) {
+        throw serializer_error(serializer_error::range_err);
+      }
+
+      const std::lock_guard<std::mutex> lock(buffer_mutex);
+
+      buffer.write(reinterpret_cast<const uint8_t*>(&size), sizeof(size));
+
+      /* 
+       * We cannot use opetator<< as it has no overload for std::string.
+       */
+      buffer.write(reinterpret_cast<const uint8_t*>(s.c_str()), size);
     }
+
 
     template<typename T>
     void read(T *t) {
@@ -169,6 +191,31 @@ namespace yas {
       }
     }
     
+    void read(std::basic_string<char>& s) {
+
+      std::size_t size;
+      buffer.read(reinterpret_cast<uint8_t*>(&size), sizeof(size));
+
+      if (size & ((unsigned long)0x80 << 8 * (sizeof(size) - 1))) {
+
+        size = size & ~((unsigned long)0x80 << 8 * (sizeof(size) - 1));
+
+        if (size > 0x7fffffffffffffff) {
+          throw serializer_error(serializer_error::data_err);
+
+        } else {
+
+          const std::lock_guard<std::mutex> lock(buffer_mutex);
+
+          char *str = new char[size];
+          buffer.read(reinterpret_cast<uint8_t*>(str), size);
+
+          s = str;
+          delete[] str;
+        }
+      }
+    }
+
     std::size_t seek() {
 
       std::size_t size;
