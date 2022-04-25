@@ -12,17 +12,17 @@ public:
   int n;
   double f;
   std::string s;
-  char str[2048];
+  char mem[2048];
 
-  demo() : n(0), s(""), f(0.0), str{0,} {}
+  demo() : n(0), s(""), f(0.0), mem{0,} {}
 
-  demo(int _n, std::string _s, double _f, char _str[]) {
+  demo(int _n, std::string _s, double _f, char _mem[]) {
 
     n = _n;
     s = _s;
     f = _f;
 
-    memcpy(str, _str, 2048);
+    memcpy(mem, _mem, 2048);
   }
 
   void serialize() {
@@ -30,7 +30,7 @@ public:
     try {
       WRITE_MANY(*this, n, f, s);
 
-      write(str, 2048);
+      write(mem, 2048);
 
     } catch(serializer::serializer_error e) {
 
@@ -43,7 +43,7 @@ public:
     try {
       READ_MANY(*this, &n, &f, s);
 
-      read(str, 2048);
+      read(mem, 2048);
 
     } catch(serializer::serializer_error e) {
 
@@ -113,10 +113,10 @@ int main() {
    * THEN check if data is not corruped
    */
 
-  char mem_in[2048];
-  memset(mem_in, 'A', 2048);
+  char mem[2048];
+  memset(mem, 'A', 2048);
 
-  demo obj1(0xffff, "string", 3.14159, mem_in);
+  demo obj1(0xffff, "string", 3.14159, mem);
   obj1.serialize();
 
   std::ofstream out("data", std::ios::binary);
@@ -140,10 +140,7 @@ int main() {
 
   assert(("double member check failed", obj2.f == 3.14159));
 
-  char mem_out[2048];
-  memset(mem_out, 'A', 2048);
-
-  assert(("char[] member check failed", !memcmp(mem_out, mem_in, 2048)));
+  assert(("char[] member check failed", !memcmp(obj2.mem, mem, 2048)));
 
   std::cout << "All checks have passed\n";
 
