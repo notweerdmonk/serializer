@@ -12,24 +12,45 @@
 
 #define SEQ_N(_1, _2, _3, _4, _5, _6, _7, _8, N, ...)   N
 
-#define NARGS(...)                                      SEQ_N(__VA_ARGS__, 8, 7, 6, 5, 4, 3, 2, 1)
+#define NARGS(...)  SEQ_N(__VA_ARGS__, 8, 7, 6, 5, 4, 3, 2, 1)
 
-#define FOR_EACH_1(F, a)                                F(a)
-#define FOR_EACH_2(F, a, ...)                           F(a); FOR_EACH_1(F, __VA_ARGS__)
-#define FOR_EACH_3(F, a, ...)                           F(a); FOR_EACH_2(F, __VA_ARGS__)
-#define FOR_EACH_4(F, a, ...)                           F(a); FOR_EACH_3(F, __VA_ARGS__)
-#define FOR_EACH_5(F, a, ...)                           F(a); FOR_EACH_4(F, __VA_ARGS__)
-#define FOR_EACH_6(F, a, ...)                           F(a); FOR_EACH_5(F, __VA_ARGS__)
-#define FOR_EACH_7(F, a, ...)                           F(a); FOR_EACH_6(F, __VA_ARGS__)
-#define FOR_EACH_8(F, a, ...)                           F(a); FOR_EACH_7(F, __VA_ARGS__)
+#define FOR_EACH_1(F, a)       F(a)
+#define FOR_EACH_2(F, a, ...)  F(a); FOR_EACH_1(F, __VA_ARGS__)
+#define FOR_EACH_3(F, a, ...)  F(a); FOR_EACH_2(F, __VA_ARGS__)
+#define FOR_EACH_4(F, a, ...)  F(a); FOR_EACH_3(F, __VA_ARGS__)
+#define FOR_EACH_5(F, a, ...)  F(a); FOR_EACH_4(F, __VA_ARGS__)
+#define FOR_EACH_6(F, a, ...)  F(a); FOR_EACH_5(F, __VA_ARGS__)
+#define FOR_EACH_7(F, a, ...)  F(a); FOR_EACH_6(F, __VA_ARGS__)
+#define FOR_EACH_8(F, a, ...)  F(a); FOR_EACH_7(F, __VA_ARGS__)
 
-#define FOR_EACH_EXPAND(N, F, ...)                      CAT(FOR_EACH_, N)(F, __VA_ARGS__)
+#define FOR_EACH_EXPAND(N, F, ...)  CAT(FOR_EACH_, N)(F, __VA_ARGS__)
 
-#define FOR_EACH(F, ...)                                FOR_EACH_EXPAND(NARGS(__VA_ARGS__), F, __VA_ARGS__)
+#define FOR_EACH(F, ...)  FOR_EACH_EXPAND(NARGS(__VA_ARGS__), F, __VA_ARGS__)
 
-#define WRITE_MANY(obj, ...)                            FOR_EACH((obj).write, __VA_ARGS__)
+#define WRITE_MANY(obj, ...)  FOR_EACH((obj).write, __VA_ARGS__)
 
-#define READ_MANY(obj, ...)                             FOR_EACH((obj).read, __VA_ARGS__)
+#define READ_MANY(obj, ...)   FOR_EACH((obj).read, __VA_ARGS__)
+
+#define SERIALIZE_BEGIN(obj) \
+  void serialize(serializer& obj) { \
+    try {
+
+#define SERIALIZE_END \
+    } catch(yas::serializer::serializer_error& e) { \
+      std::cerr << e.what() << std::endl; \
+    } \
+  }
+
+#define DESERIALIZE_BEGIN(obj) \
+  void deserialize(serializer& obj) { \
+    try {
+
+#define DESERIALIZE_END \
+    } catch(yas::serializer::serializer_error& e) { \
+      std::cerr << e.what() << std::endl; \
+    } \
+  }
+
 
 namespace yas {
 
