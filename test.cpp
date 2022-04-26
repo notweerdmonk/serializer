@@ -7,6 +7,7 @@
 
 using namespace yas;
 
+/* class that inherits serializer class */
 class demo : public serializer {
 public:
   int n;
@@ -32,7 +33,7 @@ public:
 
       write(mem, 2048);
 
-    } catch(serializer::serializer_error e) {
+    } catch(serializer::serializer_error& e) {
 
       std::cerr << e.what() << std::endl;
     }
@@ -45,20 +46,50 @@ public:
 
       read(mem, 2048);
 
-    } catch(serializer::serializer_error e) {
+    } catch(serializer::serializer_error& e) {
 
       std::cerr << e.what() << std::endl;
     }
   }
 };
 
-int main() {
+/* class that uses macros to generate serialize/deserialize functions */
+class demo2 {
+public:
+  int n;
+  double f;
+  std::string s;
+  char mem[2048];
 
-  bool check = true;
+  demo2() : n(0), s(""), f(0.0), mem{0,} {}
+
+  demo2(int _n, std::string _s, double _f, char _mem[]) {
+
+    n = _n;
+    s = _s;
+    f = _f;
+
+    memcpy(mem, _mem, 2048);
+  }
+
+  SERIALIZE_BEGIN(obj)
+    WRITE_MANY(obj, n, f, s);
+
+    obj.write(mem, 2048);
+  SERIALIZE_END
+
+  DESERIALIZE_BEGIN(obj)
+    READ_MANY(obj, &n, &f, s);
+
+    obj.read(mem, 2048);
+  DESERIALIZE_END
+};
+
+int main() {
 
   /*
    * GIVEN C dataypes
-   * WHEN data is serialzed, stored to a file, retrieved and deserialzied
+   * WHEN data is serialized and deserialzied
    * THEN check if data is not corruped
    */
 
@@ -80,7 +111,7 @@ int main() {
     s.write(arr_in, 3);
     s.write(s_in);
 
-  } catch(serializer::serializer_error e) {
+  } catch(serializer::serializer_error& e) {
 
     std::cerr << e.what() << std::endl;
   }
@@ -92,7 +123,7 @@ int main() {
     s.read(arr_out, 3);
     s.read(s_out);
 
-  } catch(serializer::serializer_error e) {
+  } catch(serializer::serializer_error& e) {
 
     std::cerr << e.what() << std::endl;
   }
@@ -107,9 +138,11 @@ int main() {
 
   delete str;
 
+  /***************************************************************************/
+
   /*
-   * GIVEN object
-   * WHEN members are serialzed, stored to a file, retrieved and deserialzied
+   * GIVEN object of class which inherits serializer class
+   * WHEN members are serialized, stored to a file, retrieved and deserialzied
    * THEN check if data is not corruped
    */
 
@@ -126,13 +159,13 @@ int main() {
 
   demo obj2;
 
-  //std::istream in(std::cin.rdbuf());
+#if 0
+  std::istream in(std::cin.rdbuf());
+#endif
   std::ifstream in("data", std::ios::binary);
 
   obj2.retrieve(in);
   obj2.deserialize();
-
-  check = true;
 
   assert(("int member check failed", obj2.n == 0xffff));
 
@@ -141,6 +174,34 @@ int main() {
   assert(("double member check failed", obj2.f == 3.14159));
 
   assert(("char[] member check failed", !memcmp(obj2.mem, mem, 2048)));
+
+  /***************************************************************************/
+
+  /*
+   * GIVEN object of class which contains generated code
+   * WHEN members are serialized and deserialzied
+   * THEN check if data is not corruped
+   */
+
+  serializer *sptr = new serializer();
+
+  demo2 obj3(0xffff, "string", 3.14159, mem);
+  obj3.serialize(*sptr);
+
+  demo2 obj4;
+  obj4.deserialize(*sptr);
+
+  delete sptr;
+
+  assert(("int member check failed", obj4.n == 0xffff));
+
+  assert(("std::string member check failed", obj4.s == "string"));
+
+  assert(("double member check failed", obj4.f == 3.14159));
+
+  assert(("char[] member check failed", !memcmp(obj4.mem, mem, 2048)));
+
+  /***************************************************************************/
 
   std::cout << "All checks have passed\n";
 
