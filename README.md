@@ -1,6 +1,8 @@
 Yet another serializer
 ======================
 
+![Tests](https://github.com/notweerdmonk/serializer/action/workflows/c-cpp.yml/badge.svg)
+
 Serialize data types, arrays, POD and classes and store or retrieve to and from
 ostream and istream objects respectively.
 
