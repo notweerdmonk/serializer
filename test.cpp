@@ -100,6 +100,8 @@ int main() {
   std::string s_out;
   int arr_in[] = { 127, 255, 65535 };
   int arr_out[4];
+  std::u32string u32s_in = { 42, 655360, 2147483648, 2290649224 };
+  std::u32string u32s_out;
 
   serializer s;
 
@@ -110,6 +112,7 @@ int main() {
     s.write("string", 7);
     s.write(arr_in, 3);
     s.write(s_in);
+    s.write(u32s_in);
 
   } catch(serializer::serializer_error& e) {
 
@@ -122,6 +125,7 @@ int main() {
     s.read(str, 7);
     s.read(arr_out, 3);
     s.read(s_out);
+    s.read(u32s_out);
 
   } catch(serializer::serializer_error& e) {
 
@@ -135,6 +139,10 @@ int main() {
   assert(("double check failed", f == 3.14159));
 
   assert(("int[] check failed", !memcmp(arr_out, arr_in, 3)));
+
+  assert(("std::string check failed", s_in == s_out));
+
+  assert(("std::u32string check failed", u32s_in == u32s_out));
 
   delete str;
 

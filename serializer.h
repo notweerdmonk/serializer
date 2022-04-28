@@ -150,9 +150,10 @@ namespace yas {
       }
     }
 
-    void write(std::basic_string<char>& s) {
+    template<typename CharT>
+    void write(std::basic_string<CharT>& s) {
 
-      auto size = s.length();
+      auto size = s.length() * sizeof(CharT);
 
       if (size > 0x7fffffffffffffff) {
         throw serializer_error(serializer_error::range_err);
@@ -164,7 +165,7 @@ namespace yas {
       buffer.write(reinterpret_cast<const uint8_t*>(&size), sizeof(size));
 
       /* 
-       * We cannot use opetator<< as it has no overload for std::string.
+       * We cannot use opetator<< as it has no overload for std::basic_string.
        */
       size = size & ~((unsigned long)0x80 << 8 * (sizeof(size) - 1));
       buffer.write(reinterpret_cast<const uint8_t*>(s.c_str()), size);
@@ -215,7 +216,8 @@ namespace yas {
       }
     }
     
-    void read(std::basic_string<char>& s) {
+    template<typename CharT>
+    void read(std::basic_string<CharT>& s) {
 
       std::size_t size;
       buffer.read(reinterpret_cast<uint8_t*>(&size), sizeof(size));
@@ -231,10 +233,10 @@ namespace yas {
 
           const std::lock_guard<std::mutex> lock(buffer_mutex);
 
-          char *str = new char[size];
+          unsigned char *str = new unsigned char[size];
           buffer.read(reinterpret_cast<uint8_t*>(str), size);
 
-          s = str;
+          s = reinterpret_cast<CharT*>(str);
           delete[] str;
         }
       }
