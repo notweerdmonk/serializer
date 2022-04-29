@@ -7,6 +7,7 @@
 #include <exception>
 #include <mutex>
 #include <string>
+#include <vector>
 
 #define CAT(a, b)                                       a##b
 
@@ -172,6 +173,24 @@ namespace yas {
     }
 
     template<typename T>
+    void write(std::vector<T>& v) {
+
+      auto size = v.size() * sizeof(T);
+
+      if (size > 0x7fffffffffffffff) {
+        throw serializer_error(serializer_error::range_err);
+      }
+
+      const std::lock_guard<std::mutex> lock(buffer_mutex);
+
+      size = size | ((unsigned long)0x80 << 8 * (sizeof(size) - 1));
+      buffer.write(reinterpret_cast<const uint8_t*>(&size), sizeof(size));
+
+      size = size & ~((unsigned long)0x80 << 8 * (sizeof(size) - 1));
+      buffer.write(reinterpret_cast<const uint8_t*>(v.data()), size);
+    }
+
+    template<typename T>
     void read(T *t) {
 
       std::size_t size;
@@ -238,6 +257,33 @@ namespace yas {
 
           s = reinterpret_cast<CharT*>(str);
           delete[] str;
+        }
+      }
+    }
+
+    template<typename T>
+    void read(std::vector<T>& v) {
+
+      std::size_t size;
+      buffer.read(reinterpret_cast<uint8_t*>(&size), sizeof(size));
+
+      if (size & ((unsigned long)0x80 << 8 * (sizeof(size) - 1))) {
+
+        size = size & ~((unsigned long)0x80 << 8 * (sizeof(size) - 1));
+
+        if (size > 0x7fffffffffffffff) {
+          throw serializer_error(serializer_error::data_err);
+
+        } else {
+
+          const std::lock_guard<std::mutex> lock(buffer_mutex);
+
+          T *arr = new T[size / sizeof(T)];
+
+          buffer.read(reinterpret_cast<uint8_t*>(arr), size);
+          v.insert(v.begin(), arr, arr + (size / sizeof(T)));
+
+          delete[] arr;
         }
       }
     }

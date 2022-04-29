@@ -102,6 +102,8 @@ int main() {
   int arr_out[4];
   std::u32string u32s_in = { 42, 655360, 2147483648, 2290649224 };
   std::u32string u32s_out;
+  std::vector<int> v_in = { 0, 1, 1, 2, 3, 5, 8, 13, 21, 34 };
+  std::vector<int> v_out;
 
   serializer s;
 
@@ -113,6 +115,7 @@ int main() {
     s.write(arr_in, 3);
     s.write(s_in);
     s.write(u32s_in);
+    s.write(v_in);
 
   } catch(serializer::serializer_error& e) {
 
@@ -126,6 +129,7 @@ int main() {
     s.read(arr_out, 3);
     s.read(s_out);
     s.read(u32s_out);
+    s.read(v_out);
 
   } catch(serializer::serializer_error& e) {
 
@@ -143,6 +147,8 @@ int main() {
   assert(("std::string check failed", s_in == s_out));
 
   assert(("std::u32string check failed", u32s_in == u32s_out));
+
+  assert(("std::vector<int> check failed", v_in == v_out));
 
   delete str;
 
