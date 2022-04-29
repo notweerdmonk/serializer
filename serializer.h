@@ -252,10 +252,11 @@ namespace yas {
 
           const std::lock_guard<std::mutex> lock(buffer_mutex);
 
-          unsigned char *str = new unsigned char[size];
-          buffer.read(reinterpret_cast<uint8_t*>(str), size);
+          CharT *str = new CharT[size / sizeof(CharT)];
 
-          s = reinterpret_cast<CharT*>(str);
+          buffer.read(reinterpret_cast<uint8_t*>(str), size);
+          s = str;
+
           delete[] str;
         }
       }
