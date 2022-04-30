@@ -60,6 +60,15 @@ namespace yas {
     std::basic_stringstream<uint8_t> buffer;
     std::mutex buffer_mutex;
 
+    void _write(const uint8_t *data, std::size_t size) {
+      /* set MSB */
+      size = size | ((unsigned long)0x80 << 8 * (sizeof(size) - 1));
+      buffer.write(reinterpret_cast<const uint8_t*>(&size), sizeof(size));
+
+      size = size & ~((unsigned long)0x80 << 8 * (sizeof(size) - 1));
+      buffer.write(data, size);
+    }
+
   public:
 
     class serializer_error : public std::exception {
@@ -119,8 +128,7 @@ namespace yas {
         }
         const std::lock_guard<std::mutex> lock(buffer_mutex);
 
-        buffer.write(reinterpret_cast<const uint8_t*>(&size), sizeof(size));
-        buffer.write(reinterpret_cast<const uint8_t*>(&t), size);
+        _write(reinterpret_cast<const uint8_t*>(&t), size);
 
       } else {
         throw serializer_error(serializer_error::non_trivial_err);
@@ -139,12 +147,7 @@ namespace yas {
 
         const std::lock_guard<std::mutex> lock(buffer_mutex);
 
-        /* set MSB */
-        size = size | ((unsigned long)0x80 << 8 * (sizeof(size) - 1));
-        buffer.write(reinterpret_cast<const uint8_t*>(&size), sizeof(size));
-
-        size = size & ~((unsigned long)0x80 << 8 * (sizeof(size) - 1));
-        buffer.write(reinterpret_cast<const uint8_t*>(t), size);
+        _write(reinterpret_cast<const uint8_t*>(t), size);
 
       } else {
         throw serializer_error(serializer_error::non_trivial_err);
@@ -162,14 +165,10 @@ namespace yas {
 
       const std::lock_guard<std::mutex> lock(buffer_mutex);
 
-      size = size | ((unsigned long)0x80 << 8 * (sizeof(size) - 1));
-      buffer.write(reinterpret_cast<const uint8_t*>(&size), sizeof(size));
-
       /* 
        * We cannot use opetator<< as it has no overload for std::basic_string.
        */
-      size = size & ~((unsigned long)0x80 << 8 * (sizeof(size) - 1));
-      buffer.write(reinterpret_cast<const uint8_t*>(s.c_str()), size);
+      _write(reinterpret_cast<const uint8_t*>(s.c_str()), size);
     }
 
     template<typename T>
@@ -183,11 +182,7 @@ namespace yas {
 
       const std::lock_guard<std::mutex> lock(buffer_mutex);
 
-      size = size | ((unsigned long)0x80 << 8 * (sizeof(size) - 1));
-      buffer.write(reinterpret_cast<const uint8_t*>(&size), sizeof(size));
-
-      size = size & ~((unsigned long)0x80 << 8 * (sizeof(size) - 1));
-      buffer.write(reinterpret_cast<const uint8_t*>(v.data()), size);
+      _write(reinterpret_cast<const uint8_t*>(v.data()), size);
     }
 
     template<typename T>
@@ -196,17 +191,22 @@ namespace yas {
       std::size_t size;
       buffer.read(reinterpret_cast<uint8_t*>(&size), sizeof(size));
 
-      if (size > 127) {
-        throw serializer_error(serializer_error::data_err);
+      if (size & ((unsigned long)0x80 << 8 * (sizeof(size) - 1))) {
 
-      } else if (size != sizeof(T)) {
-        throw serializer_error(serializer_error::size_err);
+        size = size & ~((unsigned long)0x80 << 8 * (sizeof(size) - 1));
 
-      } else {
+        if (size > 127) {
+          throw serializer_error(serializer_error::data_err);
 
-        const std::lock_guard<std::mutex> lock(buffer_mutex);
+        } else if (size != sizeof(T)) {
+          throw serializer_error(serializer_error::size_err);
 
-        buffer.read(reinterpret_cast<uint8_t*>(t), size);
+        } else {
+
+          const std::lock_guard<std::mutex> lock(buffer_mutex);
+
+          buffer.read(reinterpret_cast<uint8_t*>(t), size);
+        }
       }
     }
 
