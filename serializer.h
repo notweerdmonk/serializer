@@ -69,6 +69,11 @@ namespace yas {
       buffer.write(data, size);
     }
 
+    bool _check_magic(std::size_t& size) {
+      return (size & ((unsigned long)0x80 << 8 * (sizeof(size) - 1))) &&
+        (size = size & ~((unsigned long)0x80 << 8 * (sizeof(size) - 1)));
+    }
+
   public:
 
     class serializer_error : public std::exception {
@@ -191,9 +196,7 @@ namespace yas {
       std::size_t size;
       buffer.read(reinterpret_cast<uint8_t*>(&size), sizeof(size));
 
-      if (size & ((unsigned long)0x80 << 8 * (sizeof(size) - 1))) {
-
-        size = size & ~((unsigned long)0x80 << 8 * (sizeof(size) - 1));
+      if (_check_magic(size)) {
 
         if (size > 127) {
           throw serializer_error(serializer_error::data_err);
@@ -216,9 +219,7 @@ namespace yas {
       std::size_t size;
       buffer.read(reinterpret_cast<uint8_t*>(&size), sizeof(size));
 
-      if (size & ((unsigned long)0x80 << 8 * (sizeof(size) - 1))) {
-
-        size = size & ~((unsigned long)0x80 << 8 * (sizeof(size) - 1));
+      if (_check_magic(size)) {
 
         if (size > 0x7fffffffffffffff) {
           throw serializer_error(serializer_error::data_err);
@@ -241,9 +242,7 @@ namespace yas {
       std::size_t size;
       buffer.read(reinterpret_cast<uint8_t*>(&size), sizeof(size));
 
-      if (size & ((unsigned long)0x80 << 8 * (sizeof(size) - 1))) {
-
-        size = size & ~((unsigned long)0x80 << 8 * (sizeof(size) - 1));
+      if (_check_magic(size)) {
 
         if (size > 0x7fffffffffffffff) {
           throw serializer_error(serializer_error::data_err);
@@ -268,9 +267,7 @@ namespace yas {
       std::size_t size;
       buffer.read(reinterpret_cast<uint8_t*>(&size), sizeof(size));
 
-      if (size & ((unsigned long)0x80 << 8 * (sizeof(size) - 1))) {
-
-        size = size & ~((unsigned long)0x80 << 8 * (sizeof(size) - 1));
+      if (_check_magic(size)) {
 
         if (size > 0x7fffffffffffffff) {
           throw serializer_error(serializer_error::data_err);
@@ -291,15 +288,12 @@ namespace yas {
 
     std::size_t seek() {
 
-      std::size_t size;
-      buffer.read(reinterpret_cast<uint8_t*>(&size), sizeof(size));
+      std::size_t size = 0;
 
-      if (size & ((unsigned long)0x80 << 8 * (sizeof(size) - 1))) {
-        size = size & ~((unsigned long)0x80 << 8 * (sizeof(size) - 1));
+      if (_check_magic(size)) {
+
+        buffer.seekg(-sizeof(size), std::ios_base::cur);
       }
-
-      buffer.seekg(-sizeof(size), std::ios_base::cur);
-
       return size;
     }
 
