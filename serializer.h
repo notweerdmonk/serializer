@@ -129,8 +129,10 @@ namespace yas {
 
         auto size = sizeof(T);
         if (size > 127) {
+
           throw serializer_error(serializer_error::range_err);
         }
+
         const std::lock_guard<std::mutex> lock(buffer_mutex);
 
         _write(reinterpret_cast<const uint8_t*>(&t), size);
@@ -147,6 +149,7 @@ namespace yas {
 
         auto size = sizeof(T) * n;
         if (size > 0x7fffffffffffffff) {
+
           throw serializer_error(serializer_error::range_err_arr);
         }
 
@@ -165,6 +168,7 @@ namespace yas {
       auto size = s.length() * sizeof(CharT);
 
       if (size > 0x7fffffffffffffff) {
+
         throw serializer_error(serializer_error::range_err);
       }
 
@@ -179,15 +183,22 @@ namespace yas {
     template<typename T>
     void write(std::vector<T>& v) {
 
+      if (std::is_trivially_copyable<T>::value) {
+
       auto size = v.size() * sizeof(T);
 
       if (size > 0x7fffffffffffffff) {
+
         throw serializer_error(serializer_error::range_err);
       }
 
       const std::lock_guard<std::mutex> lock(buffer_mutex);
 
       _write(reinterpret_cast<const uint8_t*>(v.data()), size);
+
+      } else {
+        throw serializer_error(serializer_error::non_trivial_err);
+      }
     }
 
     template<typename T>
@@ -199,9 +210,11 @@ namespace yas {
       if (_check_magic(size)) {
 
         if (size > 127) {
+
           throw serializer_error(serializer_error::data_err);
 
         } else if (size != sizeof(T)) {
+
           throw serializer_error(serializer_error::size_err);
 
         } else {
