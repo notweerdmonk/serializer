@@ -118,6 +118,8 @@ namespace yas {
 
     };
 
+    virtual ~serializer() = default;
+
     /* implement functions to serialize/deserialize class members individually */
     virtual void serialize() { }
     virtual void deserialize() { }
