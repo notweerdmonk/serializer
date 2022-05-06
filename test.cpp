@@ -4,6 +4,8 @@
 #include <iostream>
 #include <string>
 #include <fstream>
+#include <vector>
+#include <map>
 
 using namespace yas;
 
@@ -100,10 +102,12 @@ int main() {
   std::string s_out;
   int arr_in[] = { 127, 255, 65535 };
   int arr_out[4];
-  std::u32string u32s_in = { 42, 655360, 2147483648, 2290649224 };
+  std::u32string u32s_in { 42, 655360, 2147483648, 2290649224 };
   std::u32string u32s_out;
-  std::vector<int> v_in = { 0, 1, 1, 2, 3, 5, 8, 13, 21, 34 };
+  std::vector<int> v_in { 0, 1, 1, 2, 3, 5, 8, 13, 21, 34 };
   std::vector<int> v_out;
+  std::map<std::string, int> m_in { {"food", 10}, {"clothes", 8}, {"shelter", 5} };
+  std::map<std::string, int> m_out;
 
   serializer s;
 
@@ -116,6 +120,7 @@ int main() {
     s.write(s_in);
     s.write(u32s_in);
     s.write(v_in);
+    s.write(m_in);
 
   } catch(serializer::serializer_error& e) {
 
@@ -130,6 +135,7 @@ int main() {
     s.read(s_out);
     s.read(u32s_out);
     s.read(v_out);
+    s.read(m_out);
 
   } catch(serializer::serializer_error& e) {
 
@@ -149,6 +155,8 @@ int main() {
   assert(("std::u32string check failed", u32s_in == u32s_out));
 
   assert(("std::vector<int> check failed", v_in == v_out));
+
+  assert(("std::map<std::string, int> check failed", m_in == m_out));
 
   delete str;
 

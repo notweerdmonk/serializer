@@ -8,6 +8,7 @@
 #include <mutex>
 #include <string>
 #include <vector>
+#include <map>
 
 #define CAT(a, b)                                       a##b
 
@@ -203,6 +204,26 @@ namespace yas {
       }
     }
 
+    template<typename K, typename T>
+    void write(std::map<K, T>& m) {
+
+      auto size = m.size() * (sizeof(K) + sizeof(m));
+
+      if (size > 0x7fffffffffffffff) {
+        throw serializer_error(serializer_error::range_err);
+      }
+
+      const std::lock_guard<std::mutex> lock(buffer_mutex);
+
+      size = size | ((unsigned long)0x80 << 8 * (sizeof(size) - 1));
+      buffer.write(reinterpret_cast<const uint8_t*>(&size), sizeof(size));
+
+      for (auto n : m) {
+        buffer.write(reinterpret_cast<const uint8_t*>(&n.first), sizeof(K));
+        buffer.write(reinterpret_cast<const uint8_t*>(&n.second), sizeof(T));
+      }
+    }
+
     template<typename T>
     void read(T *t) {
 
@@ -297,6 +318,33 @@ namespace yas {
           v.insert(v.begin(), arr, arr + (size / sizeof(T)));
 
           delete[] arr;
+        }
+      }
+    }
+
+    template<typename K, typename T>
+    void read(std::map<K, T>& m) {
+
+      std::size_t size;
+      buffer.read(reinterpret_cast<uint8_t*>(&size), sizeof(size));
+
+      if (_check_magic(size)) {
+
+        if (size > 0x7fffffffffffffff) {
+          throw serializer_error(serializer_error::data_err);
+
+        } else {
+
+          K key;
+          T value;
+
+          for (int i = 0; i < size / (sizeof(K) + sizeof(T)); i++) {
+
+            buffer.read(reinterpret_cast<uint8_t*>(&key), sizeof(K));
+            buffer.read(reinterpret_cast<uint8_t*>(&value), sizeof(T));
+
+            m[key] = value;
+          }
         }
       }
     }
