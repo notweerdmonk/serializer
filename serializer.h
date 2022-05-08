@@ -172,12 +172,22 @@ namespace yas {
         throw serializer_error(serializer_error::arr_range_err);
       }
 
-      const std::lock_guard<std::mutex> lock(buffer_mutex);
+      if (std::is_trivially_copyable<CharT>::value) {
 
-      /* 
-       * We cannot use opetator<< as it has no overload for std::basic_string.
-       */
-      _write(reinterpret_cast<const uint8_t*>(s.c_str()), size);
+        const std::lock_guard<std::mutex> lock(buffer_mutex);
+
+        /* 
+         * We cannot use opetator<< as it has no overload for std::basic_string.
+         */
+        _write(reinterpret_cast<const uint8_t*>(s.c_str()), size);
+      } else {
+
+        const std::lock_guard<std::mutex> lock(buffer_mutex);
+
+        for (auto c : s) {
+          write(c);
+        }
+      }
     }
 
     template<typename T>
@@ -190,9 +200,19 @@ namespace yas {
         throw serializer_error(serializer_error::arr_range_err);
       }
 
-      const std::lock_guard<std::mutex> lock(buffer_mutex);
+      if (std::is_trivially_copyable<T>::value) {
 
-      _write(reinterpret_cast<const uint8_t*>(v.data()), size);
+        const std::lock_guard<std::mutex> lock(buffer_mutex);
+
+        _write(reinterpret_cast<const uint8_t*>(v.data()), size);
+
+      } else {
+        const std::lock_guard<std::mutex> lock(buffer_mutex);
+
+        for (auto u : v) {
+          write(u);
+        }
+      }
     }
 
     template<typename K, typename T>
@@ -204,15 +224,15 @@ namespace yas {
         throw serializer_error(serializer_error::range_err);
       }
 
-      const std::lock_guard<std::mutex> lock(buffer_mutex);
-
       size = size | ((unsigned long)0x80 << 8 * (sizeof(size) - 1));
       buffer.write(reinterpret_cast<const uint8_t*>(&size), sizeof(size));
 
+      const std::lock_guard<std::mutex> lock(buffer_mutex);
+
       for (auto n : m) {
 
-        buffer.write(reinterpret_cast<const uint8_t*>(&n.first), sizeof(K));
-        buffer.write(reinterpret_cast<const uint8_t*>(&n.second), sizeof(T));
+        write(reinterpret_cast<const uint8_t*>(&n.first), sizeof(K));
+        write(reinterpret_cast<const uint8_t*>(&n.second), sizeof(T));
       }
     }
 
@@ -277,14 +297,26 @@ namespace yas {
 
         } else {
 
-          const std::lock_guard<std::mutex> lock(buffer_mutex);
+          if (std::is_trivially_copyable<CharT>::value) {
 
-          CharT *str = new CharT[size / sizeof(CharT)];
+            const std::lock_guard<std::mutex> lock(buffer_mutex);
 
-          buffer.read(reinterpret_cast<uint8_t*>(str), size);
-          s = str;
+            CharT *str = new CharT[size / sizeof(CharT)];
 
-          delete[] str;
+            buffer.read(reinterpret_cast<uint8_t*>(str), size);
+            s = str;
+
+            delete[] str;
+
+          } else {
+
+            CharT t;
+            for (int i = 0; i < size; i++) {
+
+              read(&t);
+              s.push_back(t);
+            }
+          }
         }
       }
     }
@@ -302,14 +334,26 @@ namespace yas {
 
         } else {
 
-          const std::lock_guard<std::mutex> lock(buffer_mutex);
+          if (std::is_trivially_copyable<T>::value) {
 
-          T *arr = new T[size / sizeof(T)];
+            const std::lock_guard<std::mutex> lock(buffer_mutex);
 
-          buffer.read(reinterpret_cast<uint8_t*>(arr), size);
-          v.insert(v.begin(), arr, arr + (size / sizeof(T)));
+            T *arr = new T[size / sizeof(T)];
 
-          delete[] arr;
+            buffer.read(reinterpret_cast<uint8_t*>(arr), size);
+            v.insert(v.begin(), arr, arr + (size / sizeof(T)));
+
+            delete[] arr;
+
+          } else {
+
+            T t;
+            for (int i = 0; i < size; i++) {
+              
+              read(&t);
+              v.push_back(t);
+            }
+          }
         }
       }
     }
@@ -332,8 +376,8 @@ namespace yas {
 
           for (int i = 0; i < size / (sizeof(K) + sizeof(T)); i++) {
 
-            buffer.read(reinterpret_cast<uint8_t*>(&key), sizeof(K));
-            buffer.read(reinterpret_cast<uint8_t*>(&value), sizeof(T));
+            read(reinterpret_cast<uint8_t*>(&key), sizeof(K));
+            read(reinterpret_cast<uint8_t*>(&value), sizeof(T));
 
             m[key] = value;
           }
