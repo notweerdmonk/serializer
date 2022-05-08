@@ -28,6 +28,26 @@ public:
     memcpy(mem, _mem, 2048);
   }
 
+  demo(const demo& d) {
+
+    n = d.n;
+    s = d.s;
+    f = d.f;
+
+    memcpy(mem, d.mem, 2048);
+  }
+
+  demo& operator=(const demo& d) {
+
+    n = d.n;
+    s = d.s;
+    f = d.f;
+
+    memcpy(mem, d.mem, 2048);
+
+    return *this;
+  }
+
   void serialize() {
 
     try {
@@ -222,6 +242,28 @@ int main() {
   assert(("double member check failed", obj4.f == 3.14159));
 
   assert(("char[] member check failed", !memcmp(obj4.mem, mem, 2048)));
+
+  /***************************************************************************/
+
+  /*
+   * GIVEN object of std::basic_string with non-trivial class as its elements
+   * WHEN the object is serialized
+   * THEN static assertion should fail
+   */
+#if 0
+  std::basic_string<demo> s_demo{ demo(0xffff, "string", 3.14159, mem) };
+  s.write(s_demo);
+#endif
+
+  /*
+   * GIVEN object of std::vector with non-trivial class as its elements
+   * WHEN the object is serialized
+   * THEN static assertion should fail
+   */
+#if 0
+  std::vector<demo> v_demo{ demo(0xffff, "string", 3.14159, mem) };
+  s.write(v_demo);
+#endif
 
   /***************************************************************************/
 
