@@ -71,6 +71,7 @@ namespace yas {
     }
 
     bool _check_magic(std::size_t& size) {
+
       return (size & ((unsigned long)0x80 << 8 * (sizeof(size) - 1))) &&
         (size = size & ~((unsigned long)0x80 << 8 * (sizeof(size) - 1)));
     }
@@ -82,10 +83,9 @@ namespace yas {
     public:
       enum err_type {
         range_err = 1,
-        range_err_arr,
+        arr_range_err,
         data_err,
         size_err,
-        non_trivial_err
       };
 
       explicit serializer_error(const err_type& e) {
@@ -95,22 +95,23 @@ namespace yas {
       const char* what() const noexcept {
 
         if (error == range_err) {
-          return "size of type exceeds 127";
 
-        } else if (error == range_err_arr) {
-          return "storage size of array exceeds 9223372036854775807";
+          return "Size of type exceeds 127.";
+
+        } else if (error == arr_range_err) {
+
+          return "Size of array exceeds 9223372036854775807.";
 
         } else if (error == data_err) {
-          return "corrupt data in buffer";
+
+          return "Corrupt data in buffer.";
 
         } else if (error == size_err) {
-          return "size mismatch";
 
-        } else if (error == non_trivial_err) {
-          return "writing non-trivial object";
-          
+          return "Size mismatch.";
+
         } else {
-          return "unhandled exception";
+          return "Unhandled exception.";
         }
       }
 
@@ -128,41 +129,37 @@ namespace yas {
     template<typename T>
     void write(T t) {
 
-      if (std::is_trivially_copyable<T>::value) {
+      static_assert(std::is_trivially_copyable<T>::value,
+          "Attempt to write object of non-trivially copyable type. Implement\
+           serialization for the class.");
 
-        auto size = sizeof(T);
-        if (size > 127) {
+      auto size = sizeof(T);
+      if (size > 127) {
 
-          throw serializer_error(serializer_error::range_err);
-        }
-
-        const std::lock_guard<std::mutex> lock(buffer_mutex);
-
-        _write(reinterpret_cast<const uint8_t*>(&t), size);
-
-      } else {
-        throw serializer_error(serializer_error::non_trivial_err);
+        throw serializer_error(serializer_error::range_err);
       }
+
+      const std::lock_guard<std::mutex> lock(buffer_mutex);
+
+      _write(reinterpret_cast<const uint8_t*>(&t), size);
     }
 
     template<typename T>
     void write(T *t, std::size_t n) {
 
-      if (std::is_trivially_copyable<T>::value) {
+      static_assert(std::is_trivially_copyable<T>::value,
+          "Attempt to write array with elements of non-trivially copyable type.\
+           Implement serialization for the class.");
 
-        auto size = sizeof(T) * n;
-        if (size > 0x7fffffffffffffff) {
+      auto size = sizeof(T) * n;
+      if (size > 0x7fffffffffffffff) {
 
-          throw serializer_error(serializer_error::range_err_arr);
-        }
-
-        const std::lock_guard<std::mutex> lock(buffer_mutex);
-
-        _write(reinterpret_cast<const uint8_t*>(t), size);
-
-      } else {
-        throw serializer_error(serializer_error::non_trivial_err);
+        throw serializer_error(serializer_error::arr_range_err);
       }
+
+      const std::lock_guard<std::mutex> lock(buffer_mutex);
+
+      _write(reinterpret_cast<const uint8_t*>(t), size);
     }
 
     template<typename CharT>
@@ -172,7 +169,7 @@ namespace yas {
 
       if (size > 0x7fffffffffffffff) {
 
-        throw serializer_error(serializer_error::range_err);
+        throw serializer_error(serializer_error::arr_range_err);
       }
 
       const std::lock_guard<std::mutex> lock(buffer_mutex);
@@ -186,22 +183,16 @@ namespace yas {
     template<typename T>
     void write(std::vector<T>& v) {
 
-      if (std::is_trivially_copyable<T>::value) {
-
       auto size = v.size() * sizeof(T);
 
       if (size > 0x7fffffffffffffff) {
 
-        throw serializer_error(serializer_error::range_err);
+        throw serializer_error(serializer_error::arr_range_err);
       }
 
       const std::lock_guard<std::mutex> lock(buffer_mutex);
 
       _write(reinterpret_cast<const uint8_t*>(v.data()), size);
-
-      } else {
-        throw serializer_error(serializer_error::non_trivial_err);
-      }
     }
 
     template<typename K, typename T>
@@ -219,6 +210,7 @@ namespace yas {
       buffer.write(reinterpret_cast<const uint8_t*>(&size), sizeof(size));
 
       for (auto n : m) {
+
         buffer.write(reinterpret_cast<const uint8_t*>(&n.first), sizeof(K));
         buffer.write(reinterpret_cast<const uint8_t*>(&n.second), sizeof(T));
       }
