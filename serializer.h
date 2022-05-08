@@ -130,8 +130,8 @@ namespace yas {
     void write(T t) {
 
       static_assert(std::is_trivially_copyable<T>::value,
-          "Attempt to write object of non-trivially copyable type. Implement\
-           serialization for the class.");
+          "Attempt to write object of non-trivially copyable type. Implement"
+          "serialization for the class.");
 
       auto size = sizeof(T);
       if (size > 127) {
@@ -148,8 +148,8 @@ namespace yas {
     void write(T *t, std::size_t n) {
 
       static_assert(std::is_trivially_copyable<T>::value,
-          "Attempt to write array with elements of non-trivially copyable type.\
-           Implement serialization for the class.");
+          "Attempt to write array with elements of non-trivially copyable type."
+          "Implement serialization for the class.");
 
       auto size = sizeof(T) * n;
       if (size > 0x7fffffffffffffff) {
