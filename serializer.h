@@ -180,9 +180,12 @@ namespace yas {
          * We cannot use opetator<< as it has no overload for std::basic_string.
          */
         _write(reinterpret_cast<const uint8_t*>(s.c_str()), size);
-      } else {
 
+      } else {
         const std::lock_guard<std::mutex> lock(buffer_mutex);
+
+        size = size | ((unsigned long)0x80 << 8 * (sizeof(size) - 1));
+        buffer.write(reinterpret_cast<const uint8_t*>(&size), sizeof(size));
 
         for (auto c : s) {
           write(c);
@@ -209,6 +212,9 @@ namespace yas {
       } else {
         const std::lock_guard<std::mutex> lock(buffer_mutex);
 
+        size = size | ((unsigned long)0x80 << 8 * (sizeof(size) - 1));
+        buffer.write(reinterpret_cast<const uint8_t*>(&size), sizeof(size));
+
         for (auto u : v) {
           write(u);
         }
@@ -224,10 +230,10 @@ namespace yas {
         throw serializer_error(serializer_error::range_err);
       }
 
+      const std::lock_guard<std::mutex> lock(buffer_mutex);
+
       size = size | ((unsigned long)0x80 << 8 * (sizeof(size) - 1));
       buffer.write(reinterpret_cast<const uint8_t*>(&size), sizeof(size));
-
-      const std::lock_guard<std::mutex> lock(buffer_mutex);
 
       for (auto n : m) {
 
