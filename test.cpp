@@ -107,8 +107,7 @@ public:
   DESERIALIZE_END
 };
 
-int main() {
-
+void test1() {
   /*
    * GIVEN C dataypes
    * WHEN data is serialized and deserialzied
@@ -179,9 +178,9 @@ int main() {
   assert(("std::map<std::string, int> check failed", m_in == m_out));
 
   delete str;
+}
 
-  /***************************************************************************/
-
+void test2() {
   /*
    * GIVEN object of class which inherits serializer class
    * WHEN members are serialized, stored to a file, retrieved and deserialzied
@@ -216,14 +215,17 @@ int main() {
   assert(("double member check failed", obj2.f == 3.14159));
 
   assert(("char[] member check failed", !memcmp(obj2.mem, mem, 2048)));
+}
 
-  /***************************************************************************/
-
+void test3() {
   /*
    * GIVEN object of class which contains generated code
    * WHEN members are serialized and deserialzied
    * THEN check if data is not corruped
    */
+
+  char mem[2048];
+  memset(mem, 'A', 2048);
 
   serializer *sptr = new serializer();
 
@@ -242,32 +244,57 @@ int main() {
   assert(("double member check failed", obj4.f == 3.14159));
 
   assert(("char[] member check failed", !memcmp(obj4.mem, mem, 2048)));
+}
 
-  /***************************************************************************/
-
+void test4() {
   /*
    * GIVEN object of std::basic_string with non-trivial class as its elements
    * WHEN the object is serialized
    * THEN static assertion should fail
    */
+
 #if 0
+  char mem[512];
+  memset(mem, 'A', 512);
+
+  serializer s;
+
   std::basic_string<demo> s_demo{ demo(0xffff, "string", 3.14159, mem) };
   s.write(s_demo);
 #endif
+}
 
+void test5() {
   /*
    * GIVEN object of std::vector with non-trivial class as its elements
    * WHEN the object is serialized
    * THEN static assertion should fail
    */
+
 #if 0
+  char mem[512];
+  memset(mem, 'A', 512);
+
+  serializer s;
+
   std::vector<demo> v_demo{ demo(0xffff, "string", 3.14159, mem) };
   s.write(v_demo);
 #endif
+}
 
-  /***************************************************************************/
+int main() {
 
-  std::cout << "All checks have passed\n";
+  test1();
+
+  test2();
+
+  test3();
+
+  test4();
+
+  test5();
+
+  std::cout << "All tests have passed\n";
 
   return 0;
 }
