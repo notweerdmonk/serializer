@@ -224,7 +224,7 @@ namespace yas {
     template<typename K, typename T>
     void write(std::map<K, T>& m) {
 
-      auto size = m.size() * (sizeof(K) + sizeof(m));
+      auto size = m.size();
 
       if (size > 0x7fffffffffffffff) {
         throw serializer_error(serializer_error::range_err);
@@ -380,7 +380,7 @@ namespace yas {
           K key;
           T value;
 
-          for (int i = 0; i < size / (sizeof(K) + sizeof(T)); i++) {
+          for (int i = 0; i < size; i++) {
 
             read(reinterpret_cast<uint8_t*>(&key), sizeof(K));
             read(reinterpret_cast<uint8_t*>(&value), sizeof(T));
