@@ -9,8 +9,9 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <array>
 
-#define CAT(a, b)                                       a##b
+#define CAT(a, b)   a##b
 
 #define SEQ_N(_1, _2, _3, _4, _5, _6, _7, _8, N, ...)   N
 
@@ -242,6 +243,34 @@ namespace yas {
       }
     }
 
+    template<typename T, std::size_t sz>
+    void write(std::array<T, sz>& a) {
+
+      auto size = sz * sizeof(T);
+
+      if (size > 0x7fffffffffffffff) {
+
+        throw serializer_error(serializer_error::arr_range_err);
+      }
+
+      if (std::is_trivially_copyable<T>::value) {
+
+        const std::lock_guard<std::mutex> lock(buffer_mutex);
+
+        _write(reinterpret_cast<const uint8_t*>(a.data()), size);
+
+      } else {
+        const std::lock_guard<std::mutex> lock(buffer_mutex);
+
+        size = size | ((unsigned long)0x80 << 8 * (sizeof(size) - 1));
+        buffer.write(reinterpret_cast<const uint8_t*>(&size), sizeof(size));
+
+        for (auto e : a) {
+          write(e);
+        }
+      }
+    }
+
     template<typename T>
     void read(T *t) {
 
@@ -386,6 +415,43 @@ namespace yas {
             read(reinterpret_cast<uint8_t*>(&value), sizeof(T));
 
             m[key] = value;
+          }
+        }
+      }
+    }
+
+    template<typename T, std::size_t sz>
+    void read(std::array<T, sz>& a) {
+
+      std::size_t size;
+      buffer.read(reinterpret_cast<uint8_t*>(&size), sizeof(size));
+
+      if (_check_magic(size)) {
+
+        if (size > 0x7fffffffffffffff) {
+          throw serializer_error(serializer_error::data_err);
+
+        } else {
+
+          if (std::is_trivially_copyable<T>::value) {
+
+            const std::lock_guard<std::mutex> lock(buffer_mutex);
+
+            T t;
+            for (int i = 0; i < sz; i++) {
+
+              buffer.read(reinterpret_cast<uint8_t*>(&t), sizeof(T));
+              a[i] = t;
+            }
+
+          } else {
+
+            T t;
+            for (int i = 0; i < sz; i++) {
+              
+              read(&t);
+              a[i] = t;
+            }
           }
         }
       }

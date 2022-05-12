@@ -6,6 +6,7 @@
 #include <fstream>
 #include <vector>
 #include <map>
+#include <array>
 
 using namespace yas;
 
@@ -127,6 +128,8 @@ void test1() {
   std::vector<int> v_out;
   std::map<std::string, int> m_in { {"food", 10}, {"clothes", 8}, {"shelter", 5} };
   std::map<std::string, int> m_out;
+  std::array<int, 10> a_in { 0, 1, 1, 2, 3, 5, 8, 13, 21, 34 };
+  std::array<int, 10> a_out;
 
   serializer s;
 
@@ -140,6 +143,7 @@ void test1() {
     s.write(u32s_in);
     s.write(v_in);
     s.write(m_in);
+    s.write(a_in);
 
   } catch(serializer::serializer_error& e) {
 
@@ -155,6 +159,7 @@ void test1() {
     s.read(u32s_out);
     s.read(v_out);
     s.read(m_out);
+    s.read(a_out);
 
   } catch(serializer::serializer_error& e) {
 
@@ -176,6 +181,8 @@ void test1() {
   assert(("std::vector<int> check failed", v_in == v_out));
 
   assert(("std::map<std::string, int> check failed", m_in == m_out));
+
+  assert(("std::array<int, 10> check failed", a_in == a_out));
 
   delete str;
 }
