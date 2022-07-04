@@ -29,7 +29,6 @@
 #include <cstdint>
 #include <sstream>
 #include <exception>
-#include <mutex>
 #include <string>
 #include <vector>
 #include <map>
@@ -164,8 +163,6 @@ namespace yas {
         throw serializer_error(serializer_error::range_err);
       }
 
-      const std::lock_guard<std::mutex> lock(buffer_mutex);
-
       _write(reinterpret_cast<const uint8_t*>(&t), size);
     }
 
@@ -182,8 +179,6 @@ namespace yas {
         throw serializer_error(serializer_error::arr_range_err);
       }
 
-      const std::lock_guard<std::mutex> lock(buffer_mutex);
-
       _write(reinterpret_cast<const uint8_t*>(t), size);
     }
 
@@ -199,16 +194,12 @@ namespace yas {
 
       if (std::is_trivially_copyable<CharT>::value) {
 
-        const std::lock_guard<std::mutex> lock(buffer_mutex);
-
         /* 
          * We cannot use opetator<< as it has no overload for std::basic_string.
          */
         _write(reinterpret_cast<const uint8_t*>(s.c_str()), size);
 
       } else {
-        const std::lock_guard<std::mutex> lock(buffer_mutex);
-
         size = size | ((unsigned long)0x80 << 8 * (sizeof(size) - 1));
         buffer.write(reinterpret_cast<const uint8_t*>(&size), sizeof(size));
 
@@ -230,13 +221,9 @@ namespace yas {
 
       if (std::is_trivially_copyable<T>::value) {
 
-        const std::lock_guard<std::mutex> lock(buffer_mutex);
-
         _write(reinterpret_cast<const uint8_t*>(v.data()), size);
 
       } else {
-        const std::lock_guard<std::mutex> lock(buffer_mutex);
-
         size = size | ((unsigned long)0x80 << 8 * (sizeof(size) - 1));
         buffer.write(reinterpret_cast<const uint8_t*>(&size), sizeof(size));
 
@@ -254,8 +241,6 @@ namespace yas {
       if (size > 0x7fffffffffffffff) {
         throw serializer_error(serializer_error::range_err);
       }
-
-      const std::lock_guard<std::mutex> lock(buffer_mutex);
 
       size = size | ((unsigned long)0x80 << 8 * (sizeof(size) - 1));
       buffer.write(reinterpret_cast<const uint8_t*>(&size), sizeof(size));
@@ -279,13 +264,9 @@ namespace yas {
 
       if (std::is_trivially_copyable<T>::value) {
 
-        const std::lock_guard<std::mutex> lock(buffer_mutex);
-
         _write(reinterpret_cast<const uint8_t*>(a.data()), size);
 
       } else {
-        const std::lock_guard<std::mutex> lock(buffer_mutex);
-
         size = size | ((unsigned long)0x80 << 8 * (sizeof(size) - 1));
         buffer.write(reinterpret_cast<const uint8_t*>(&size), sizeof(size));
 
@@ -313,8 +294,6 @@ namespace yas {
 
         } else {
 
-          const std::lock_guard<std::mutex> lock(buffer_mutex);
-
           buffer.read(reinterpret_cast<uint8_t*>(t), size);
         }
       }
@@ -336,8 +315,6 @@ namespace yas {
 
         } else {
 
-          const std::lock_guard<std::mutex> lock(buffer_mutex);
-
           buffer.read(reinterpret_cast<uint8_t*>(t), size);
         }
       }
@@ -357,8 +334,6 @@ namespace yas {
         } else {
 
           if (std::is_trivially_copyable<CharT>::value) {
-
-            const std::lock_guard<std::mutex> lock(buffer_mutex);
 
             CharT *str = new CharT[size / sizeof(CharT)];
 
@@ -394,8 +369,6 @@ namespace yas {
         } else {
 
           if (std::is_trivially_copyable<T>::value) {
-
-            const std::lock_guard<std::mutex> lock(buffer_mutex);
 
             T *arr = new T[size / sizeof(T)];
 
@@ -458,8 +431,6 @@ namespace yas {
         } else {
 
           if (std::is_trivially_copyable<T>::value) {
-
-            const std::lock_guard<std::mutex> lock(buffer_mutex);
 
             T t;
             for (int i = 0; i < sz; i++) {
