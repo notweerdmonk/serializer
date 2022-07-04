@@ -83,7 +83,6 @@ namespace yas {
   class serializer {
 
     std::basic_stringstream<uint8_t> buffer;
-    std::mutex buffer_mutex;
 
     void _write(const uint8_t *data, std::size_t size) {
       /* set MSB */
